@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>termorg — Cartographer's Console · design v0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&family=Geist:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Page chrome — warm paper */
+  --paper: #F3EDDF;
+  --paper-deep: #ECE4D2;
+  --ink: #1A1815;
+  --ink-soft: #3D3A33;
+  --ink-dim: #7A7363;
+  --rule: #D6CCB6;
+  --rule-soft: #E2D9C5;
+  --accent: #A04E3D;       /* falu red, editorial accent */
+
+  /* TUI interior — cartographer's console */
+  --t-bg: #0F1217;
+  --t-bg-soft: #161A20;
+  --t-fg: #E2DAC4;
+  --t-dim: #807866;
+  --t-mute: #4A4640;
+  --t-rule: #292B32;
+  --t-rule-strong: #3A3B43;
+  --t-focus: #E2DAC4;
+  --t-ochre: #D4A574;
+  --t-sage: #94AC85;
+  --t-terra: #C9785A;
+  --t-slate: #7A92AD;
+  --t-active: #9FBB85;
+  --t-attn: #E0A75D;
+  --t-error: #D27765;
+  --t-quiet: #545049;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 72px 60px 96px;
+}
+
+/* ─── HERO ─────────────────────────────────────────────────────────────── */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: end;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 18px;
+}
+
+.brand .dot {
+  color: var(--accent);
+}
+
+.hero h1 {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 104px;
+  line-height: 0.92;
+  letter-spacing: -0.012em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.hero h1 .console {
+  color: var(--accent);
+}
+
+.hero .meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-align: right;
+  color: var(--ink-dim);
+  line-height: 2;
+  text-transform: uppercase;
+}
+
+.hero .meta strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.lede {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1.35;
+  max-width: 760px;
+  margin: 56px 0 24px;
+  color: var(--ink-soft);
+}
+
+.lede em {
+  color: var(--accent);
+  font-style: italic;
+}
+
+/* ─── SECTIONS ─────────────────────────────────────────────────────────── */
+.section { margin-top: 96px; }
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 36px;
+}
+
+.section-num {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-size: 72px;
+  line-height: 0.9;
+  color: var(--accent);
+}
+
+.section-title {
+  font-family: 'Instrument Serif', serif;
+  font-weight: 400;
+  font-size: 42px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.section-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-left: auto;
+}
+
+.section-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 48px;
+  align-items: start;
+}
+
+/* ─── TUI DEVICE ──────────────────────────────────────────────────────── */
+.tui {
+  background: var(--t-bg);
+  color: var(--t-fg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 22px 26px;
+  border-radius: 6px;
+  border: 1px solid #08090C;
+}
+
+.tui-top, .tui-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  white-space: pre;
+}
+
+.tui-rule {
+  border-top: 1px solid var(--t-rule);
+  margin: 12px -26px;
+}
+
+.tui-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  padding: 4px 0;
+}
+
+.tui-sb {
+  white-space: pre;
+  padding-right: 18px;
+  border-right: 1px solid var(--t-rule);
+  align-self: stretch;
+}
+
+.tui-sb.dimmed {
+  opacity: 0.42;
+}
+
+.tui-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-content: start;
+}
+
+.tile {
+  border: 1px solid var(--t-rule);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  min-height: 156px;
+  overflow: hidden;
+}
+
+.tile.sel { border-color: var(--t-focus); }
+
+.tile-head {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--t-rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--t-dim);
+  letter-spacing: 0.04em;
+}
+
+.tile-head .name { color: var(--t-fg); }
+
+.tile-body {
+  padding: 10px 14px 12px;
+  white-space: pre;
+  flex: 1;
+  font-size: 12.5px;
+}
+
+/* Focused-mode single tile */
+.tile-large {
+  border: 1px solid var(--t-focus);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  min-height: 440px;
+  overflow: hidden;
+}
+
+.tile-large .tile-head {
+  padding: 10px 16px;
+  font-size: 12px;
+}
+
+.tile-large .tile-body {
+  padding: 16px 20px 20px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* TUI semantic colors */
+.t-dim    { color: var(--t-dim); }
+.t-mute   { color: var(--t-mute); }
+.t-fg     { color: var(--t-fg); }
+.t-ochre  { color: var(--t-ochre); }
+.t-sage   { color: var(--t-sage); }
+.t-terra  { color: var(--t-terra); }
+.t-slate  { color: var(--t-slate); }
+.t-active { color: var(--t-active); }
+.t-attn   { color: var(--t-attn); }
+.t-error  { color: var(--t-error); }
+.t-quiet  { color: var(--t-quiet); }
+
+.pill {
+  display: inline-block;
+  border: 1px solid currentColor;
+  padding: 1px 7px;
+  border-radius: 2px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+@keyframes caretBlink { 50% { opacity: 0; } }
+.caret {
+  display: inline-block;
+  background: var(--t-fg);
+  width: 0.55em;
+  height: 1.05em;
+  vertical-align: -0.18em;
+  animation: caretBlink 1.05s steps(1) infinite;
+}
+
+@keyframes pulseDim { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.pulse { animation: pulseDim 2.4s ease-in-out infinite; }
+
+/* ─── NOTES COLUMN ────────────────────────────────────────────────────── */
+.notes {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.notes h4 {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--accent);
+  margin: 0 0 10px;
+}
+
+.notes p {
+  margin: 0 0 18px;
+  color: var(--ink-soft);
+}
+
+.notes .label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 22px 0 6px;
+}
+
+.notes code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: var(--paper-deep);
+  padding: 1px 6px;
+  border-radius: 2px;
+  color: var(--ink);
+}
+
+/* ─── TOKENS ──────────────────────────────────────────────────────────── */
+.tokens {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 56px;
+  margin-top: 8px;
+}
+
+.token-block h3 {
+  font-family: 'Instrument Serif', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 24px;
+  margin: 0 0 22px;
+  color: var(--ink);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.swatches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.sw {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.sw-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.sw-name { color: var(--ink); flex: 1; }
+.sw-hex  { color: var(--ink-dim); letter-spacing: 0.04em; }
+
+.glyphs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.gl {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.gl-sym {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px;
+  text-align: center;
+  color: var(--ink);
+}
+
+.gl-sym.attn   { color: #B8853E; }
+.gl-sym.active { color: #6F8E5A; }
+.gl-sym.error  { color: #A85040; }
+
+.gl-desc {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.gl-desc small {
+  display: block;
+  color: var(--ink-dim);
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.typo-spec {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  color: var(--ink);
+  line-height: 1.85;
+}
+.typo-spec .k { color: var(--ink-dim); }
+.typo-spec .v { color: var(--ink); }
+.typo-spec .row { display: grid; grid-template-columns: 130px 1fr; gap: 12px; }
+.typo-spec hr { border: none; border-top: 1px dashed var(--rule); margin: 12px 0; }
+
+/* ─── FOOTER ─────────────────────────────────────────────────────────── */
+footer {
+  margin-top: 96px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+footer .accent { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ─── HERO ─────────────────────────────────────────────────────── -->
+  <header class="hero">
+    <div>
+      <div class="brand"><span class="dot">●</span> &nbsp;termorg &nbsp;/&nbsp; design v0 &nbsp;/&nbsp; cartographer's console</div>
+      <h1>The Cartographer's<br><span class="console">Console.</span></h1>
+    </div>
+    <div class="meta">
+      <div>Saturday<br><strong>23.05.2026</strong></div>
+      <div style="margin-top:18px;">For discussion<br><strong>not implementation</strong></div>
+    </div>
+  </header>
+
+  <p class="lede">A terminal cockpit for supervising many long-running sessions — agents, dev servers, watchers — tiled at a glance, grouped by project, navigated by <em>mouse first</em> and <em>prefix when it has to be</em>.</p>
+
+  <!-- ─── SECTION 01: GRID MODE ────────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Grid mode</h2>
+      <span class="section-kicker">Overview · default state</span>
+    </div>
+
+    <div class="section-layout">
+      <!-- TUI -->
+      <div class="tui">
+        <div class="tui-top">
+<span><span class="t-ochre">●</span>  termorg <span class="t-mute">·</span> cartographer's console</span>
+<span><span class="pill t-fg">GRID</span>  <span class="t-active">●</span>  <span class="t-dim">11:42</span></span>
+        </div>
+        <div class="tui-rule"></div>
+
+        <div class="tui-body">
+
+          <!-- SIDEBAR -->
+<div class="tui-sb"><span class="t-dim">GROUPS</span>                <span class="t-dim">(3)</span>
+
+  <span class="t-ochre">▾</span> proj-a           <span class="t-active">●</span> <span class="t-attn pulse">✱</span>
+    <span class="t-ochre">▎</span> dev              <span class="t-active">●</span>
+    <span class="t-ochre">▎</span> agent            <span class="t-attn pulse">✱</span>
+
+  <span class="t-sage">▾</span> proj-b           <span class="t-active">●</span>
+    <span class="t-sage">▎</span> dev              <span class="t-active">●</span>
+    <span class="t-sage">▎</span> test             <span class="t-quiet">·</span>
+
+  <span class="t-terra">▸</span> scratch        <span class="t-dim">(3)</span>
+
+
+  <span class="t-mute">+ new group</span></div>
+
+          <!-- MAIN GRID -->
+          <div class="tui-main">
+
+            <!-- proj-a · dev -->
+            <div class="tile">
+              <div class="tile-head">
+                <span><span class="t-ochre">▎</span> <span class="name">proj-a · dev</span></span>
+                <span class="t-active">●</span>
+              </div>
+<div class="tile-body">  VITE v5.0.10  <span class="t-dim">ready in 312 ms</span>
+
+    <span class="t-dim">➜</span>  Local:    http://localhost:5173/
+    <span class="t-dim">➜</span>  Network:  use --host to expose
+
+  <span class="t-dim">12:34:08</span>  [vite] hmr update
+              /src/App.tsx
+  <span class="t-dim">12:34:11</span>  [vite] page reload</div>
+            </div>
+
+            <!-- proj-a · agent  (SELECTED) -->
+            <div class="tile sel">
+              <div class="tile-head">
+                <span><span class="t-ochre">▎</span> <span class="name">proj-a · agent</span></span>
+                <span class="t-attn pulse">✱</span>
+              </div>
+<div class="tile-body">  <span class="t-active">●</span> I'll start by reading the project
+    structure to understand what we're
+    working with.
+
+  <span class="t-dim">⏵</span> list_directory(.)
+    <span class="t-dim">47 files across 8 directories.</span>
+
+  <span class="t-dim">⏵</span> read_file(src/main.rs)
+    <span class="t-dim">Reading 312 lines…</span>
+
+  <span class="t-attn">✱</span> The PTY handling uses blocking
+    reads. Switch to async, or<span class="caret"></span></div>
+            </div>
+
+            <!-- proj-b · dev -->
+            <div class="tile">
+              <div class="tile-head">
+                <span><span class="t-sage">▎</span> <span class="name">proj-b · dev</span></span>
+                <span class="t-active">●</span>
+              </div>
+<div class="tile-body">  <span class="t-dim">[Running 'cargo run']</span>
+
+     Compiling termorg v0.1.0
+       <span class="t-dim">↳ 18 dependencies, 4.8 MB</span>
+
+     Finished <span class="t-dim">dev [unoptimized]</span>
+       target(s) in 8.42s
+
+  Server listening on :8080  <span class="t-active">✓</span></div>
+            </div>
+
+            <!-- proj-b · test -->
+            <div class="tile">
+              <div class="tile-head">
+                <span><span class="t-sage">▎</span> <span class="name">proj-b · test</span></span>
+                <span class="t-quiet">·</span>
+              </div>
+<div class="tile-body">  tests/test_groups.py  <span class="t-active">........</span>  <span class="t-dim">[ 8]</span>
+  tests/test_pty.py     <span class="t-active">............</span>  <span class="t-dim">[12]</span>
+  tests/test_layout.py  <span class="t-active">..</span>            <span class="t-dim">[ 2]</span>
+
+  <span class="t-dim">─────</span>
+  <span class="t-active">22 passed</span> <span class="t-dim">in 2.31s</span></div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="tui-rule"></div>
+        <div class="tui-bot">
+<span><span class="t-fg">⏎</span><span class="t-dim"> focus</span>    <span class="t-fg">n</span><span class="t-dim"> new</span>    <span class="t-fg">g</span><span class="t-dim"> group</span>    <span class="t-fg">m</span><span class="t-dim"> move</span>    <span class="t-fg">/</span><span class="t-dim"> find</span>    <span class="t-fg">⌃ ␣</span><span class="t-dim"> prefix</span>    <span class="t-fg">q</span><span class="t-dim"> quit</span></span>
+<span class="t-quiet">v0.1</span>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <aside class="notes">
+        <h4>What you're seeing</h4>
+        <p>Four terminals across two project groups. The agent tile (cream border) is selected; its pulsing <code>✱</code> bubbles up into the sidebar so attention is legible without scanning every tile.</p>
+
+        <span class="label">Selection vs. focus</span>
+        <p>One tile is "current" — that's selection. Pressing <code>⏎</code> drops into focused mode on it. Selection is also where <code>m</code> moves <em>from</em> when reorganizing groups.</p>
+
+        <span class="label">Density choice</span>
+        <p>Tiles render the last screenful of each terminal. Truncation is silent and consistent — no fade-out, no "show more" affordance. Full scrollback lives in focused mode.</p>
+
+        <span class="label">Group accents</span>
+        <p>Earth-tones, not categorical primaries: ochre, sage, terracotta, slate. Hand-picked to coexist without competing — a project palette, not a category legend.</p>
+
+        <span class="label">Status, four states</span>
+        <p>Active <code class="t-active">●</code> · attention <code class="t-attn">✱</code> · error <code class="t-error">✗</code> · quiet <code class="t-quiet">·</code>. Each terminal and group inherits the loudest state of its children.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ─── SECTION 02: FOCUSED MODE ─────────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Focused mode</h2>
+      <span class="section-kicker">Passthrough · one terminal</span>
+    </div>
+
+    <div class="section-layout">
+      <!-- TUI -->
+      <div class="tui">
+        <div class="tui-top">
+<span><span class="t-ochre">●</span>  termorg <span class="t-mute">·</span> cartographer's console</span>
+<span><span class="pill t-attn">FOCUS</span>  <span class="t-ochre">▎</span> <span class="t-fg">proj-a · agent</span>  <span class="t-dim">11:43</span></span>
+        </div>
+        <div class="tui-rule"></div>
+
+        <div class="tui-body">
+
+          <!-- SIDEBAR (dimmed) -->
+<div class="tui-sb dimmed"><span class="t-dim">GROUPS</span>                <span class="t-dim">(3)</span>
+
+  <span class="t-ochre">▾</span> proj-a           <span class="t-active">●</span> <span class="t-attn">✱</span>
+    <span class="t-ochre">▎</span> dev              <span class="t-active">●</span>
+    <span class="t-ochre">▎</span> agent            <span class="t-attn">✱</span>
+
+  <span class="t-sage">▾</span> proj-b           <span class="t-active">●</span>
+    <span class="t-sage">▎</span> dev              <span class="t-active">●</span>
+    <span class="t-sage">▎</span> test             <span class="t-quiet">·</span>
+
+  <span class="t-terra">▸</span> scratch        <span class="t-dim">(3)</span></div>
+
+          <!-- FOCUSED TILE -->
+          <div class="tile-large">
+            <div class="tile-head">
+              <span><span class="t-ochre">▎</span> <span class="name">proj-a · agent</span>  <span class="t-dim">─ /home/me/proj-a ─ claude</span></span>
+              <span class="t-attn pulse">✱ awaiting input</span>
+            </div>
+<div class="tile-body">  <span class="t-active">●</span> I'll start by reading the project structure to understand what we're working with.
+
+  <span class="t-dim">⏵</span> list_directory(.)
+    <span class="t-dim">47 files across 8 directories. Notable: src/, tests/, docs/, examples/,</span>
+    <span class="t-dim">and a custom .agent/ directory I haven't seen before.</span>
+
+  <span class="t-dim">⏵</span> read_file(src/main.rs)
+    <span class="t-dim">The entry point sets up the event loop and spawns PTYs via portable_pty.</span>
+    <span class="t-dim">Mouse capture is enabled. 312 lines total.</span>
+
+  <span class="t-dim">⏵</span> read_file(src/pty.rs)
+    <span class="t-dim">Each terminal owns a reader thread that blocks on read(2) and forwards</span>
+    <span class="t-dim">bytes to the main thread for vt100 parsing via mpsc::Sender.</span>
+
+  <span class="t-attn">✱</span> The PTY handling uses blocking reads in dedicated threads. This works fine
+    for tens of terminals but won't scale past a few hundred. Want me to:
+
+       <span class="t-ochre">(a)</span> <span class="t-fg">keep it threaded</span> <span class="t-dim">— simpler, fine for the target use case</span>
+       <span class="t-ochre">(b)</span> <span class="t-fg">switch to tokio + spawn_blocking</span> <span class="t-dim">— async ergonomics, same underlying</span>
+           <span class="t-dim">mechanism, more deps</span>
+       <span class="t-ochre">(c)</span> <span class="t-fg">try mio-based polling</span> <span class="t-dim">— fewer threads, requires non-blocking I/O</span>
+           <span class="t-dim">wrapping. Most work, best scaling.</span>
+
+    Which would you prefer? <span class="caret"></span></div>
+          </div>
+
+        </div>
+
+        <div class="tui-rule"></div>
+        <div class="tui-bot">
+<span><span class="t-attn">⌃ ␣</span><span class="t-dim"> prefix mode</span>    <span class="t-fg">⌃ ␣ d</span><span class="t-dim"> back to grid</span>    <span class="t-fg">⌃ ␣ n / p</span><span class="t-dim"> next / prev terminal</span>    <span class="t-fg">⌃ ␣ ?</span><span class="t-dim"> help</span></span>
+<span class="t-quiet">passthrough</span>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <aside class="notes">
+        <h4>What changes</h4>
+        <p>Sidebar dims to ~40% opacity but stays mouse-live — clicking another terminal switches focus without leaving focused mode. The mode pill flips to <code>FOCUS</code> in amber. The bottom bar swaps cockpit commands for prefix-key reminders.</p>
+
+        <span class="label">Passthrough</span>
+        <p>Every keystroke, mouse event, and ANSI sequence flows to the PTY. The inner program (here, Claude Code) owns the screen — colors, cursor position, scrollback. We just render what its vt100 stream says.</p>
+
+        <span class="label">Why a prefix exists</span>
+        <p>Inner programs eat <code>Esc</code> and most modifiers. <code>Ctrl-Space</code> is reserved as the one key we capture before anything else — your way out. Configurable; the default is a deliberate choice (rarely bound elsewhere).</p>
+
+        <span class="label">Caret</span>
+        <p>The blinking block is <em>ours</em>, drawn over whatever the inner program is doing. It's a liveness signal: input is flowing, we're alive, you're connected.</p>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ─── SECTION 03: DESIGN LANGUAGE ──────────────────────────────── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Design language</h2>
+      <span class="section-kicker">Palette · glyphs · type</span>
+    </div>
+
+    <div class="tokens">
+
+      <!-- Palette -->
+      <div class="token-block">
+        <h3>Palette</h3>
+        <ul class="swatches">
+          <li class="sw"><span class="sw-chip" style="background:#0F1217;"></span><span class="sw-name">bg</span><span class="sw-hex">#0F1217</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#161A20;"></span><span class="sw-name">bg.elev</span><span class="sw-hex">#161A20</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#E2DAC4;"></span><span class="sw-name">fg</span><span class="sw-hex">#E2DAC4</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#807866;"></span><span class="sw-name">fg.dim</span><span class="sw-hex">#807866</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#292B32;"></span><span class="sw-name">rule</span><span class="sw-hex">#292B32</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#D4A574;"></span><span class="sw-name">group.ochre</span><span class="sw-hex">#D4A574</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#94AC85;"></span><span class="sw-name">group.sage</span><span class="sw-hex">#94AC85</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#C9785A;"></span><span class="sw-name">group.terra</span><span class="sw-hex">#C9785A</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#7A92AD;"></span><span class="sw-name">group.slate</span><span class="sw-hex">#7A92AD</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#9FBB85;"></span><span class="sw-name">status.active</span><span class="sw-hex">#9FBB85</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#E0A75D;"></span><span class="sw-name">status.attn</span><span class="sw-hex">#E0A75D</span></li>
+          <li class="sw"><span class="sw-chip" style="background:#D27765;"></span><span class="sw-name">status.error</span><span class="sw-hex">#D27765</span></li>
+        </ul>
+      </div>
+
+      <!-- Glyphs -->
+      <div class="token-block">
+        <h3>Glyphs</h3>
+        <ul class="glyphs">
+          <li class="gl"><span class="gl-sym active">●</span><span class="gl-desc">active<small>recent output, things are happening</small></span></li>
+          <li class="gl"><span class="gl-sym attn">✱</span><span class="gl-desc">attention<small>idle after output — likely awaiting input</small></span></li>
+          <li class="gl"><span class="gl-sym error">✗</span><span class="gl-desc">error<small>process exited non-zero</small></span></li>
+          <li class="gl"><span class="gl-sym" style="color:#7A7363">·</span><span class="gl-desc">quiet<small>no output in the last threshold</small></span></li>
+          <li class="gl"><span class="gl-sym" style="color:#B8853E">▎</span><span class="gl-desc">group accent<small>tinted bar identifies group membership</small></span></li>
+          <li class="gl"><span class="gl-sym" style="color:#7A7363">▾&nbsp;▸</span><span class="gl-desc">expand · collapse<small>sidebar disclosure</small></span></li>
+          <li class="gl"><span class="gl-sym" style="color:#7A7363">⏵</span><span class="gl-desc">tool call<small>marker for agent invocations in transcripts</small></span></li>
+          <li class="gl"><span class="gl-sym">█</span><span class="gl-desc">caret<small>our cursor, drawn in focused mode</small></span></li>
+        </ul>
+      </div>
+
+      <!-- Typography -->
+      <div class="token-block">
+        <h3>Typography</h3>
+        <div class="typo-spec">
+          <div class="row"><span class="k">family</span><span class="v">JetBrains Mono</span></div>
+          <div class="row"><span class="k">size</span><span class="v">13px / 12.5px tiles</span></div>
+          <div class="row"><span class="k">leading</span><span class="v">1.55</span></div>
+          <div class="row"><span class="k">weights</span><span class="v">400 only</span></div>
+          <hr>
+          <div class="row"><span class="k">tile head</span><span class="v">11px · letterspaced</span></div>
+          <div class="row"><span class="k">top bar</span><span class="v">13px · pill 11px</span></div>
+          <div class="row"><span class="k">status bar</span><span class="v">12.5px · keys at fg</span></div>
+          <hr>
+          <div class="row"><span class="k">density</span><span class="v">no cell padding</span></div>
+          <div class="row"><span class="k">tile gap</span><span class="v">14px</span></div>
+          <div class="row"><span class="k">device pad</span><span class="v">22px / 26px</span></div>
+          <hr>
+          <div class="row"><span class="k">motion</span><span class="v">caret 1.05s · attn 2.4s</span></div>
+          <div class="row"><span class="k">motion</span><span class="v">nothing else moves</span></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <span>termorg <span class="accent">·</span> cartographer's console <span class="accent">·</span> design v0</span>
+    <span>for discussion <span class="accent">/</span> not implementation</span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+[package]
+name = "termorg"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+bincode = "1"
+crossterm = "0.28"
+nix = { version = "0.29", features = ["fs", "process", "signal"] }
+portable-pty = "0.8"
+ratatui = "0.28"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+vt100 = "0.15"
