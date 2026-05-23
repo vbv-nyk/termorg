@@ -4,8 +4,8 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 pub enum InputAction {
     /// Send these bytes to the server (which forwards them to the PTY).
     Forward(Vec<u8>),
-    /// User pressed Ctrl-Space — detach from the server and exit.
-    Quit,
+    /// User pressed Ctrl-Space — enter prefix mode for the next key.
+    Prefix,
 }
 
 /// Translate a crossterm `KeyEvent` into an `InputAction`.
@@ -15,9 +15,9 @@ pub fn key_to_action(key: KeyEvent) -> Option<InputAction> {
     use InputAction::*;
     use KeyCode::*;
 
-    // Ctrl-Space is our prefix/quit key — never forwarded to the PTY.
+    // Ctrl-Space enters prefix mode — never forwarded to the PTY.
     if key.code == Char(' ') && key.modifiers == KeyModifiers::CONTROL {
-        return Some(Quit);
+        return Some(Prefix);
     }
 
     let bytes: Vec<u8> = match key.code {
