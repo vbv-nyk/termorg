@@ -1,5 +1,6 @@
 mod client;
 mod daemon;
+mod layout;
 mod proto;
 mod server;
 
@@ -15,7 +16,38 @@ fn main() -> Result<()> {
     match args.get(1).map(String::as_str) {
         None | Some("attach") => attach(),
         Some("kill") => kill_server(),
-        Some(unknown) => bail!("unknown subcommand: {unknown}\nUsage: termorg [attach|kill]"),
+        Some("--version") | Some("-V") | Some("version") => {
+            println!("termorg {}", env!("CARGO_PKG_VERSION"));
+            Ok(())
+        }
+        Some("--help") | Some("-h") | Some("help") => {
+            println!("termorg {} — terminal organizer / multiplexer", env!("CARGO_PKG_VERSION"));
+            println!();
+            println!("USAGE:");
+            println!("  termorg [attach]   Start the server (if not running) and attach a client");
+            println!("  termorg kill       Stop the running server");
+            println!("  termorg --version  Print version");
+            println!("  termorg --help     Print this help");
+            println!();
+            println!("KEYBOARD SHORTCUTS:");
+            println!("  Grid mode:");
+            println!("    Arrow keys   Navigate between terminals");
+            println!("    Enter        Focus the selected terminal");
+            println!("    n            New terminal in current group");
+            println!("    g            New group");
+            println!("    r            Rename current group");
+            println!("    q / Q        Quit");
+            println!();
+            println!("  Focused mode:");
+            println!("    Ctrl-G       Return to grid view");
+            println!("    Ctrl-R       Rename this terminal");
+            println!("    Page-Up      Scroll back through output history");
+            println!("    Page-Down    Scroll forward (back to live view)");
+            println!();
+            println!("STATE DIR: ~/.local/state/termorg/");
+            Ok(())
+        }
+        Some(unknown) => bail!("unknown subcommand: {unknown}\nRun 'termorg --help' for usage."),
     }
 }
 

@@ -1,23 +1,31 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-/// What the client should do in response to a keypress.
-pub enum InputAction {
-    /// Send these bytes to the server (which forwards them to the PTY).
-    Forward(Vec<u8>),
-    /// User pressed Ctrl-Space — enter prefix mode for the next key.
-    Prefix,
-}
-
-/// Translate a crossterm `KeyEvent` into an `InputAction`.
+/// Translate a crossterm `KeyEvent` into bytes to send to the PTY.
 ///
 /// Returns `None` for keys we don't handle (e.g. bare modifier presses).
-pub fn key_to_action(key: KeyEvent) -> Option<InputAction> {
-    use InputAction::*;
-    use KeyCode::*;
+pub fn key_to_action(key: KeyEvent) -> Option<Vec<u8>> {
+    // Alt modifier: prepend ESC (0x1b) to whatever bytes the base key produces.
+    // This is the standard encoding — Alt+x = ESC x — used by bash readline,
+    // vim, emacs, etc.
+    let has_alt = key.modifiers.contains(KeyModifiers::ALT);
 
-    // Ctrl-Space enters prefix mode — never forwarded to the PTY.
+    // Strip the ALT bit so the inner match can treat the key normally.
+    let inner_key = KeyEvent::new(key.code, key.modifiers - KeyModifiers::ALT);
+
+    let base_bytes: Option<Vec<u8>> = key_base_bytes(inner_key);
+
+    if has_alt {
+        return base_bytes.map(|mut b| { b.insert(0, 0x1b); b });
+    }
+
+    base_bytes
+}
+
+fn key_base_bytes(key: KeyEvent) -> Option<Vec<u8>> {
+    use KeyCode::*;
+    // Ctrl-Space → NUL byte (0x00), the standard terminal encoding.
     if key.code == Char(' ') && key.modifiers == KeyModifiers::CONTROL {
-        return Some(Prefix);
+        return Some(vec![0x00]);
     }
 
     let bytes: Vec<u8> = match key.code {
@@ -32,7 +40,7 @@ pub fn key_to_action(key: KeyEvent) -> Option<InputAction> {
         // e.g. Ctrl-C → 0x03, Ctrl-D → 0x04, Ctrl-Z → 0x1a.
         Char(c) if key.modifiers == KeyModifiers::CONTROL => {
             let lower = c.to_ascii_lowercase();
-            if lower >= 'a' && lower <= 'z' {
+            if lower.is_ascii_lowercase() {
                 vec![lower as u8 - b'a' + 1]
             } else {
                 return None;
@@ -89,5 +97,6 @@ pub fn key_to_action(key: KeyEvent) -> Option<InputAction> {
         _ => return None,
     };
 
-    Some(Forward(bytes))
+    Some(bytes)
 }
+

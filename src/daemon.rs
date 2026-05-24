@@ -17,6 +17,10 @@ pub fn pid_path() -> PathBuf {
     state_dir().join("server.pid")
 }
 
+pub fn layout_path() -> PathBuf {
+    state_dir().join("layout.toml")
+}
+
 /// Which side of the fork we are on after `daemonize()` returns.
 pub enum DaemonRole {
     /// We are the daemon child: run the server.
@@ -43,15 +47,25 @@ pub fn daemonize() -> Result<DaemonRole> {
 
     setsid().context("setsid")?;
 
+    // Redirect stdin and stdout to /dev/null — the daemon has no terminal.
     let devnull = fs::OpenOptions::new()
         .read(true)
         .write(true)
         .open("/dev/null")
         .context("open /dev/null")?;
-    let fd = devnull.as_raw_fd();
-    dup2(fd, 0).context("dup2 stdin")?;
-    dup2(fd, 1).context("dup2 stdout")?;
-    dup2(fd, 2).context("dup2 stderr")?;
+    let null_fd = devnull.as_raw_fd();
+    dup2(null_fd, 0).context("dup2 stdin")?;
+    dup2(null_fd, 1).context("dup2 stdout")?;
+
+    // Redirect stderr to a log file so crashes and eprintln! output are
+    // preserved for debugging instead of being silently discarded.
+    fs::create_dir_all(state_dir()).context("create state dir for log")?;
+    let log_file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(state_dir().join("server.log"))
+        .context("open server log")?;
+    dup2(log_file.as_raw_fd(), 2).context("dup2 stderr to log")?;
 
     fs::write(pid_path(), getpid().to_string()).context("write pidfile")?;
 
